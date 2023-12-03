@@ -1094,7 +1094,7 @@ static int lirc_send(struct arguments *args, int fd, unsigned features, struct s
 	size_t size = f->len * sizeof(unsigned);
 	if (args->verbose) {
 		int i;
-		printf("Sending:");
+		printf("Sending on %d Hz(%d bytes):", f->carrier, f->len);
 		for (i=0; i<f->len; i++)
 			printf("%s%u", i & 1 ? " -" : " +", f->buf[i]);
 		putchar('\n');

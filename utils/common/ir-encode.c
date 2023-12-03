@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <linux/lirc.h>
 
@@ -168,6 +169,7 @@ static int sharp_encode(enum rc_proto proto, unsigned scancode, unsigned *buf)
 }
 
 static const int sony_unit = 600000;
+static const int long_space = sony_unit * 43;
 
 static void sony_add_bits(unsigned *buf, int *n, int bits, int count)
 {
@@ -184,21 +186,24 @@ static void sony_add_bits(unsigned *buf, int *n, int bits, int count)
 
 static int sony_encode(enum rc_proto proto, unsigned scancode, unsigned *buf)
 {
-	int n = 0;
+	int n = 0, encoding_buf_len = 0;
 
 	buf[n++] = NS_TO_US(sony_unit * 4);
 	buf[n++] = NS_TO_US(sony_unit);
 
 	switch (proto) {
 	case RC_PROTO_SONY12:
+		encoding_buf_len = 2 + (15 * 2);
 		sony_add_bits(buf, &n, scancode, 7);
 		sony_add_bits(buf, &n, scancode >> 16, 5);
 		break;
 	case RC_PROTO_SONY15:
+		encoding_buf_len = 2 + (15 * 2);
 		sony_add_bits(buf, &n, scancode, 7);
 		sony_add_bits(buf, &n, scancode >> 16, 8);
 		break;
 	case RC_PROTO_SONY20:
+		encoding_buf_len = 2 + (20 * 2);
 		sony_add_bits(buf, &n, scancode, 7);
 		sony_add_bits(buf, &n, scancode >> 16, 5);
 		sony_add_bits(buf, &n, scancode >> 8, 8);
@@ -206,6 +211,15 @@ static int sony_encode(enum rc_proto proto, unsigned scancode, unsigned *buf)
 	default:
 		return 0;
 	}
+
+	// Send it 3 times in total separated with a space of (43 * sony_unit) 
+	// because generally sending once is not recognized in my test
+	buf[n-1] =  NS_TO_US(long_space);
+	memcpy(&buf[n], &buf[0], encoding_buf_len * sizeof(int));
+	n += encoding_buf_len;
+	memcpy(&buf[n], &buf[0], encoding_buf_len * sizeof(int));
+	n += encoding_buf_len;
+	buf[n-1] = 0;
 
 	/* ignore last space */
 	return n - 1;
