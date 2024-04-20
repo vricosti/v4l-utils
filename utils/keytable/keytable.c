@@ -1728,7 +1728,7 @@ static int get_rate(int fd, unsigned int *delay, unsigned int *period)
 	}
 	*delay = rep[0];
 	*period = rep[1];
-	printf(_("Repeat delay: %d ms, repeat period: %d ms\n"), *delay, *period);
+	fprintf(stderr,_("Repeat delay: %d ms, repeat period: %d ms\n"), *delay, *period);
 	return 0;
 }
 
